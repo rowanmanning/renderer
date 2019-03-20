@@ -30,7 +30,7 @@ commands:
       - npm-install
       - run:
           name: Publish to npm
-          command: echo "TODO"
+          command: make publish-npm
       - cache-node-modules
 
   npm-install:
@@ -90,15 +90,24 @@ workflows:
   lint-test-publish:
     jobs:
 
-      - lint
+      - lint:
+          filters:
+            tags:
+              only: /^v?[0-9]+\.[0-9]+\.[0-9]+([-+].+)?/
 
       - test-node-10:
           requires:
             - lint
+          filters:
+            tags:
+              only: /^v?[0-9]+\.[0-9]+\.[0-9]+([-+].+)?/
 
       - test-node-11:
           requires:
             - lint
+          filters:
+            tags:
+              only: /^v?[0-9]+\.[0-9]+\.[0-9]+([-+].+)?/
 
       - publish:
           requires:
@@ -108,4 +117,4 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+([-+].+)?/
+              only: /^v?[0-9]+\.[0-9]+\.[0-9]+([-+].+)?/
