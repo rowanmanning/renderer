@@ -1,0 +1,31 @@
+
+# Build matrix
+language: node_js
+node_js:
+  - '10'
+  - '11'
+
+# Build jobs
+jobs:
+  include:
+
+    # Run the linter only on one version of Node.js
+    - stage: verify
+      script: make verify
+      node_js: '10'
+
+    # Always run the tests
+    - stage: test
+      script: make test
+
+    # Publish only on one version of Node.js
+    - stage: publish
+      script: echo "TODO"
+      node_js: '10'
+
+# Build stages
+stages:
+  - name: lint
+  - name: test
+  - name: publish
+    if: tag =~ /^v?[0-9]+\.[0-9]+\.[0-9]+([-+].+)?/
