@@ -13,9 +13,9 @@ Render [htm](https://github.com/developit/htm) views.
     * [Creating a renderer](#creating-a-renderer)
     * [Rendering a view](#rendering-a-view)
     * [Creating a view](#creating-a-view)
-	* [Using with Koa](#doctypes)
+    * [Using with Koa](#doctypes)
     * [Doctypes](#doctypes)
-	* [Layouts](#layouts)
+  * [Layouts](#layouts)
   * [Contributing](#contributing)
   * [License](#license)
 
