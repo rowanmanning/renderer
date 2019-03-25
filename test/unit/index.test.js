@@ -1,7 +1,7 @@
 'use strict';
 
 const index = require('../../index');
-const renderer = require('../../lib/renderer');
+const Renderer = require('../../lib/renderer');
 
 describe('index', () => {
 
@@ -10,7 +10,7 @@ describe('index', () => {
 	});
 
 	it('aliases `lib/renderer`', () => {
-		expect(index).toStrictEqual(renderer);
+		expect(index).toStrictEqual(Renderer);
 	});
 
 });
