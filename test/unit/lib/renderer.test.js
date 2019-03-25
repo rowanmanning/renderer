@@ -656,6 +656,23 @@ describe('lib/renderer', () => {
 
 		});
 
+		describe('when `value` is an array of things that look like HTML elements', () => {
+
+			it('returns `true`', () => {
+				expect(Renderer.isHtmlElement([
+					{
+						type: 'mock-tag-name',
+						props: {}
+					},
+					{
+						type: 'mock-tag-name',
+						props: {}
+					}
+				])).toStrictEqual(true);
+			});
+
+		});
+
 		describe('when `value` does not look like an HTML element', () => {
 
 			it('returns `false`', () => {
@@ -665,6 +682,13 @@ describe('lib/renderer', () => {
 					type: undefined,
 					props: undefined
 				})).toStrictEqual(false);
+				expect(Renderer.isHtmlElement([
+					{
+						type: 'mock-tag-name',
+						props: {}
+					},
+					'mock'
+				])).toStrictEqual(false);
 			});
 
 		});
