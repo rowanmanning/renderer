@@ -224,15 +224,6 @@ describe('lib/renderer', () => {
 
 			});
 
-			/*
-			(context, next) => {
-				context.render = async (templateNames, renderContext) => {
-					renderContext = Object.assign({}, context.state, renderContext);
-					context.body = await this.render(templateNames, renderContext);
-				};
-				return next();
-			};
-			*/
 		});
 
 		describe('.applyStringTransforms(renderedTemplate, renderContext)', () => {
