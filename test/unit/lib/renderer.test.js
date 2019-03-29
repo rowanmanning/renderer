@@ -25,7 +25,7 @@ describe('lib/renderer', () => {
 
 	it('creates an `htm` template tag using Hyperons', () => {
 		expect(htm.bind).toHaveBeenCalledTimes(1);
-		expect(htm.bind).toHaveBeenCalledWith(Hyperons.h);
+		expect(htm.bind).toHaveBeenCalledWith(Hyperons.createElement);
 	});
 
 	describe('new Renderer(options)', () => {
@@ -130,14 +130,14 @@ describe('lib/renderer', () => {
 			});
 
 			it('renders the HTML element with Hyperons', () => {
-				expect(Hyperons.render).toHaveBeenCalledTimes(1);
-				expect(Hyperons.render).toHaveBeenCalledWith('mock-template-html');
+				expect(Hyperons.renderToString).toHaveBeenCalledTimes(1);
+				expect(Hyperons.renderToString).toHaveBeenCalledWith('mock-template-html');
 			});
 
 			it('applies string transforms to the rendered template', () => {
 				expect(instance.applyStringTransforms).toHaveBeenCalledTimes(1);
 				expect(instance.applyStringTransforms).toHaveBeenCalledWith(
-					Hyperons.render.mock.results[0].value,
+					Hyperons.renderToString.mock.results[0].value,
 					'mock-defaulted-render-context'
 				);
 			});
