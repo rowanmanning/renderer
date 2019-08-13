@@ -17,7 +17,8 @@ Render [htm](https://github.com/developit/htm) views with [Hyperons](https://git
     * [Cascade](#cascade)
     * [Layouts](#layouts)
     * [Partials](#partials)
-    * [Using with Koa](#doctypes)
+    * [Use with Express](#use-with-express)
+    * [Use with Koa](#use-with-koa)
     * [Doctypes](#doctypes)
     * [Examples](#examples)
   * [Contributing](#contributing)
@@ -66,6 +67,12 @@ const output = await renderer.render('example', context);
 ```
 
 `context` is an object which contains properties that are made available to the view. `output` will be the rendered HTML as a string.
+
+If you pass `render` an absolute path, it will render the JavaScript file found at that path:
+
+```js
+const output = await renderer.render('/path/to/example', context);
+```
 
 ### Creating a view
 
@@ -365,9 +372,29 @@ module.exports = context => {
 };
 ```
 
+### Use with Express
+
+The `renderer.expressViewEngine` method returns an [Express](https://expressjs.com/) view engine that can be used to render views:
+
+```js
+const express = require('express');
+const Renderer = require('@rowanmanning/renderer');
+
+const app = express();
+const renderer = new Renderer();
+
+// The extension must be "js"
+app.engine('js', renderer.express());
+app.set('view engine', 'js');
+```
+
+See the [Express example](example/express) for a working demo.
+
+**Note that there's an important caveat with Express rendering:** namespaces and cascades do not work, and the Renderer's `path` option is ignored in favour of the Express application's view path.
+
 ### Use with Koa
 
-The `renderer.koa` method returns Koa middleware which can be used to render views:
+The `renderer.koa` method returns [Koa](https://koajs.com/) middleware which can be used to render views:
 
 ```js
 const Koa = require('koa');

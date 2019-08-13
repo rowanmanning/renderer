@@ -148,6 +148,76 @@ describe('lib/renderer', () => {
 
 		});
 
+		describe('.express()', () => {
+			let viewEngine;
+
+			beforeEach(() => {
+				viewEngine = instance.express();
+			});
+
+			it('returns an Express view engine function', () => {
+				expect(viewEngine).toBeInstanceOf(Function);
+			});
+
+			describe('viewEngine(filePath, renderContext, done)', () => {
+				let filePath;
+				let renderContext;
+				let done;
+				let returnValue;
+
+				beforeEach(async () => {
+					jest.spyOn(instance, 'render').mockReturnValue('mock-template');
+					filePath = '/mock/file/path';
+					renderContext = {
+						mockContext: true
+					};
+					done = jest.fn().mockReturnValue('mock-done-return');
+					returnValue = await viewEngine(filePath, renderContext, done);
+				});
+
+				afterEach(() => {
+					instance.render.mockRestore();
+				});
+
+				it('renders the view', () => {
+					expect(instance.render).toHaveBeenCalledTimes(1);
+					expect(instance.render).toHaveBeenCalledWith(filePath, renderContext);
+				});
+
+				it('calls and returns `done`, with the rendered template', () => {
+					expect(done).toHaveBeenCalledTimes(1);
+					expect(done).toHaveBeenCalledWith(null, 'mock-template');
+					expect(returnValue).toStrictEqual('mock-done-return');
+				});
+
+				describe('when `instance.render` errors', () => {
+					let renderError;
+
+					beforeEach(async () => {
+						renderError = new Error('mock render error');
+						instance.render.mockReset();
+						instance.render.mockRejectedValue(renderError);
+						done = jest.fn().mockReturnValue('mock-done-return');
+						returnValue = await viewEngine(filePath, renderContext, done);
+					});
+
+					it('attempts to render the view', () => {
+						expect(instance.render).toHaveBeenCalledTimes(1);
+						expect(instance.render).toHaveBeenCalledWith(filePath, renderContext);
+					});
+
+					it('calls and returns `done`, with the render error', () => {
+						expect(done).toHaveBeenCalledTimes(1);
+						expect(done).toHaveBeenCalledWith(renderError);
+						expect(returnValue).toStrictEqual('mock-done-return');
+					});
+
+				});
+
+			});
+
+		});
+
 		describe('.koa()', () => {
 			let middleware;
 
@@ -414,6 +484,23 @@ describe('lib/renderer', () => {
 
 			it('returns the resolved template path', () => {
 				expect(returnValue).toStrictEqual('mock-namespace-path/mock-template');
+			});
+
+			describe('when the template name begins with a slash character', () => {
+
+				beforeEach(() => {
+					Renderer.parseTemplateName.mockReset();
+					returnValue = instance.resolveTemplatePath('/mock-template');
+				});
+
+				it('does not attempt to parse the template name', () => {
+					expect(Renderer.parseTemplateName).not.toHaveBeenCalled();
+				});
+
+				it('returns the template name as-is', () => {
+					expect(returnValue).toStrictEqual('/mock-template');
+				});
+
 			});
 
 			describe('when the parsed namespace is not valid', () => {
