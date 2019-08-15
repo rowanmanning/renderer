@@ -1,15 +1,12 @@
 'use strict';
 
+const assert = require('proclaim');
+
 describe('lib/Partial', () => {
 	let Partial;
 
 	beforeEach(() => {
-		jest.resetModules();
 		Partial = require('../../../lib/partial');
-	});
-
-	afterEach(() => {
-		jest.clearAllMocks();
 	});
 
 	describe('new Partial(options)', () => {
@@ -26,7 +23,7 @@ describe('lib/Partial', () => {
 		describe('.context', () => {
 
 			it('is set to `renderContext`', () => {
-				expect(instance.context).toStrictEqual(renderContext);
+				assert.strictEqual(instance.context, renderContext);
 			});
 
 		});
@@ -39,7 +36,7 @@ describe('lib/Partial', () => {
 			});
 
 			it('returns a string which contains default partial output', () => {
-				expect(returnValue).toStrictEqual('Unextended Partial (Partial)');
+				assert.strictEqual(returnValue, 'Unextended Partial (Partial)');
 			});
 
 		});
@@ -53,7 +50,7 @@ describe('lib/Partial', () => {
 			describe('.context', () => {
 
 				it('is set to an empty object', () => {
-					expect(instance.context).toEqual({});
+					assert.deepEqual(instance.context, {});
 				});
 
 			});

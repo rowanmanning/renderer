@@ -1,16 +1,18 @@
 'use strict';
 
-const index = require('../../index');
-const Renderer = require('../../lib/renderer');
+const assert = require('proclaim');
 
 describe('index', () => {
+	let index;
+	let Renderer;
 
-	afterEach(() => {
-		jest.clearAllMocks();
+	beforeEach(() => {
+		index = require('../../index');
+		Renderer = require('../../lib/renderer');
 	});
 
 	it('aliases `lib/renderer`', () => {
-		expect(index).toStrictEqual(Renderer);
+		assert.strictEqual(index, Renderer);
 	});
 
 });

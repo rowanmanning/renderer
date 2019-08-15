@@ -1,6 +1,9 @@
 'use strict';
 
+const assert = require('proclaim');
+const mockery = require('mockery');
 const path = require('path');
+const sinon = require('sinon');
 
 describe('lib/renderer', () => {
 	let htm;
@@ -10,22 +13,20 @@ describe('lib/renderer', () => {
 	let requireFirst;
 
 	beforeEach(() => {
-		jest.resetModules();
 		process.env.NODE_ENV = 'test';
-		htm = require('htm');
-		Hyperons = require('hyperons');
+		htm = require('../mock/npm/htm');
+		mockery.registerMock('htm', htm);
+		Hyperons = require('../mock/npm/hyperons');
+		mockery.registerMock('hyperons', Hyperons);
 		Partial = require('../../../lib/partial');
-		requireFirst = require('@rowanmanning/require-first');
+		requireFirst = require('../mock/npm/@rowanmanning/require-first');
+		mockery.registerMock('@rowanmanning/require-first', requireFirst);
 		Renderer = require('../../../lib/renderer');
 	});
 
-	afterEach(() => {
-		jest.clearAllMocks();
-	});
-
 	it('creates an `htm` template tag using Hyperons', () => {
-		expect(htm.bind).toHaveBeenCalledTimes(1);
-		expect(htm.bind).toHaveBeenCalledWith(Hyperons.createElement);
+		assert.calledOnce(htm.bind);
+		assert.calledWith(htm.bind, Hyperons.createElement);
 	});
 
 	describe('new Renderer(options)', () => {
@@ -41,20 +42,20 @@ describe('lib/renderer', () => {
 					'mock-namespace': 'mock-namespace-path'
 				}
 			};
-			jest.spyOn(Renderer, 'applyDefaultOptions').mockReturnValue(defaultedOptions);
+			sinon.stub(Renderer, 'applyDefaultOptions').returns(defaultedOptions);
 			userOptions = {mockUserOptions: true};
 			instance = new Renderer(userOptions);
 		});
 
 		it('calls `Renderer.applyDefaultOptions` with `options`', () => {
-			expect(Renderer.applyDefaultOptions).toHaveBeenCalledTimes(1);
-			expect(Renderer.applyDefaultOptions).toHaveBeenCalledWith(userOptions);
+			assert.calledOnce(Renderer.applyDefaultOptions);
+			assert.calledWith(Renderer.applyDefaultOptions, userOptions);
 		});
 
 		describe('.env', () => {
 
 			it('is set to the defaulted `env` option', () => {
-				expect(instance.env).toStrictEqual('mock-env');
+				assert.strictEqual(instance.env, 'mock-env');
 			});
 
 		});
@@ -62,12 +63,12 @@ describe('lib/renderer', () => {
 		describe('.namespaces', () => {
 
 			it('is set to a Map representation of the defaulted `path` and `namespacePaths` options', () => {
-				expect(instance.namespaces).toBeInstanceOf(Map);
-				expect(instance.namespaces.size).toStrictEqual(2);
-				expect(instance.namespaces.has('__default')).toBeTruthy();
-				expect(instance.namespaces.get('__default')).toStrictEqual('mock-default-path');
-				expect(instance.namespaces.has('mock-namespace')).toBeTruthy();
-				expect(instance.namespaces.get('mock-namespace')).toStrictEqual('mock-namespace-path');
+				assert.isInstanceOf(instance.namespaces, Map);
+				assert.strictEqual(instance.namespaces.size, 2);
+				assert.isTrue(instance.namespaces.has('__default'));
+				assert.strictEqual(instance.namespaces.get('__default'), 'mock-default-path');
+				assert.isTrue(instance.namespaces.has('mock-namespace'));
+				assert.strictEqual(instance.namespaces.get('mock-namespace'), 'mock-namespace-path');
 			});
 
 		});
@@ -75,14 +76,14 @@ describe('lib/renderer', () => {
 		describe('.renderContext', () => {
 
 			it('is an object', () => {
-				expect(instance.renderContext).not.toBeNull();
-				expect(typeof instance.renderContext).toStrictEqual('object');
+				assert.isNotNull(instance.renderContext);
+				assert.strictEqual(typeof instance.renderContext, 'object');
 			});
 
 			describe('.doctype', () => {
 
 				it('is set to the HTML5 doctype', () => {
-					expect(instance.renderContext.doctype).toStrictEqual('<!DOCTYPE html>');
+					assert.strictEqual(instance.renderContext.doctype, '<!DOCTYPE html>');
 				});
 
 			});
@@ -94,56 +95,50 @@ describe('lib/renderer', () => {
 			let template;
 
 			beforeEach(async () => {
-				template = jest.fn().mockResolvedValue('mock-template-html');
-				jest.spyOn(instance, 'applyDefaultRenderContext').mockReturnValue('mock-defaulted-render-context');
-				jest.spyOn(instance, 'applyStringTransforms').mockReturnValue('mock-applied-string-transforms');
-				jest.spyOn(instance, 'loadTemplate').mockReturnValue(template);
-				jest.spyOn(Renderer, 'assertIsHtmlElement').mockReturnValue(undefined);
+				template = sinon.stub().resolves('mock-template-html');
+				sinon.stub(instance, 'applyDefaultRenderContext').returns('mock-defaulted-render-context');
+				sinon.stub(instance, 'applyStringTransforms').returns('mock-applied-string-transforms');
+				sinon.stub(instance, 'loadTemplate').returns(template);
+				sinon.stub(Renderer, 'assertIsHtmlElement').returns(undefined);
 				returnValue = await instance.render('mock-template-names', 'mock-render-context');
 			});
 
-			afterEach(() => {
-				instance.applyDefaultRenderContext.mockRestore();
-				instance.applyStringTransforms.mockRestore();
-				instance.loadTemplate.mockRestore();
-				Renderer.assertIsHtmlElement.mockRestore();
-			});
-
 			it('applies the default render context', () => {
-				expect(instance.applyDefaultRenderContext).toHaveBeenCalledTimes(1);
-				expect(instance.applyDefaultRenderContext).toHaveBeenCalledWith('mock-render-context');
+				assert.calledOnce(instance.applyDefaultRenderContext);
+				assert.calledWith(instance.applyDefaultRenderContext, 'mock-render-context');
 			});
 
 			it('loads the requested template', () => {
-				expect(instance.loadTemplate).toHaveBeenCalledTimes(1);
-				expect(instance.loadTemplate).toHaveBeenCalledWith('mock-template-names');
+				assert.calledOnce(instance.loadTemplate);
+				assert.calledWith(instance.loadTemplate, 'mock-template-names');
 			});
 
 			it('calls the loaded template with the defaulted render context', () => {
-				expect(template).toHaveBeenCalledTimes(1);
-				expect(template).toHaveBeenCalledWith('mock-defaulted-render-context');
+				assert.calledOnce(template);
+				assert.calledWith(template, 'mock-defaulted-render-context');
 			});
 
 			it('asserts that the resolved template value is an HTML element', () => {
-				expect(Renderer.assertIsHtmlElement).toHaveBeenCalledTimes(1);
-				expect(Renderer.assertIsHtmlElement).toHaveBeenCalledWith('mock-template-html', 'Templates must return an HTML element');
+				assert.calledOnce(Renderer.assertIsHtmlElement);
+				assert.calledWith(Renderer.assertIsHtmlElement, 'mock-template-html', 'Templates must return an HTML element');
 			});
 
 			it('renders the HTML element with Hyperons', () => {
-				expect(Hyperons.renderToString).toHaveBeenCalledTimes(1);
-				expect(Hyperons.renderToString).toHaveBeenCalledWith('mock-template-html');
+				assert.calledOnce(Hyperons.renderToString);
+				assert.calledWith(Hyperons.renderToString, 'mock-template-html');
 			});
 
 			it('applies string transforms to the rendered template', () => {
-				expect(instance.applyStringTransforms).toHaveBeenCalledTimes(1);
-				expect(instance.applyStringTransforms).toHaveBeenCalledWith(
-					Hyperons.renderToString.mock.results[0].value,
+				assert.calledOnce(instance.applyStringTransforms);
+				assert.calledWith(
+					instance.applyStringTransforms,
+					Hyperons.renderToString.firstCall.returnValue,
 					'mock-defaulted-render-context'
 				);
 			});
 
 			it('returns the transformed string', () => {
-				expect(returnValue).toStrictEqual('mock-applied-string-transforms');
+				assert.strictEqual(returnValue, 'mock-applied-string-transforms');
 			});
 
 		});
@@ -156,7 +151,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns an Express view engine function', () => {
-				expect(viewEngine).toBeInstanceOf(Function);
+				assert.isFunction(viewEngine);
 			});
 
 			describe('viewEngine(filePath, renderContext, done)', () => {
@@ -166,28 +161,24 @@ describe('lib/renderer', () => {
 				let returnValue;
 
 				beforeEach(async () => {
-					jest.spyOn(instance, 'render').mockReturnValue('mock-template');
+					sinon.stub(instance, 'render').returns('mock-template');
 					filePath = '/mock/file/path';
 					renderContext = {
 						mockContext: true
 					};
-					done = jest.fn().mockReturnValue('mock-done-return');
+					done = sinon.stub().returns('mock-done-return');
 					returnValue = await viewEngine(filePath, renderContext, done);
 				});
 
-				afterEach(() => {
-					instance.render.mockRestore();
-				});
-
 				it('renders the view', () => {
-					expect(instance.render).toHaveBeenCalledTimes(1);
-					expect(instance.render).toHaveBeenCalledWith(filePath, renderContext);
+					assert.calledOnce(instance.render);
+					assert.calledWith(instance.render, filePath, renderContext);
 				});
 
 				it('calls and returns `done`, with the rendered template', () => {
-					expect(done).toHaveBeenCalledTimes(1);
-					expect(done).toHaveBeenCalledWith(null, 'mock-template');
-					expect(returnValue).toStrictEqual('mock-done-return');
+					assert.calledOnce(done);
+					assert.calledWith(done, null, 'mock-template');
+					assert.strictEqual(returnValue, 'mock-done-return');
 				});
 
 				describe('when `instance.render` errors', () => {
@@ -195,21 +186,21 @@ describe('lib/renderer', () => {
 
 					beforeEach(async () => {
 						renderError = new Error('mock render error');
-						instance.render.mockReset();
-						instance.render.mockRejectedValue(renderError);
-						done = jest.fn().mockReturnValue('mock-done-return');
+						instance.render.reset();
+						instance.render.rejects(renderError);
+						done = sinon.stub().returns('mock-done-return');
 						returnValue = await viewEngine(filePath, renderContext, done);
 					});
 
 					it('attempts to render the view', () => {
-						expect(instance.render).toHaveBeenCalledTimes(1);
-						expect(instance.render).toHaveBeenCalledWith(filePath, renderContext);
+						assert.calledOnce(instance.render);
+						assert.calledWith(instance.render, filePath, renderContext);
 					});
 
 					it('calls and returns `done`, with the render error', () => {
-						expect(done).toHaveBeenCalledTimes(1);
-						expect(done).toHaveBeenCalledWith(renderError);
-						expect(returnValue).toStrictEqual('mock-done-return');
+						assert.calledOnce(done);
+						assert.calledWith(done, renderError);
+						assert.strictEqual(returnValue, 'mock-done-return');
 					});
 
 				});
@@ -226,7 +217,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns a Koa middleware function', () => {
-				expect(middleware).toBeInstanceOf(Function);
+				assert.isFunction(middleware);
 			});
 
 			describe('middleware(context, next)', () => {
@@ -241,18 +232,18 @@ describe('lib/renderer', () => {
 							mockState: true
 						}
 					};
-					next = jest.fn().mockReturnValue('mock-next-return');
+					next = sinon.stub().returns('mock-next-return');
 					returnValue = middleware(context, next);
 				});
 
 				it('adds a render method to `context`', () => {
-					expect(context.render).toBeInstanceOf(Function);
+					assert.isFunction(context.render);
 				});
 
 				it('calls and returns `next`', () => {
-					expect(next).toHaveBeenCalledTimes(1);
-					expect(next).toHaveBeenCalledWith();
-					expect(returnValue).toStrictEqual('mock-next-return');
+					assert.calledOnce(next);
+					assert.calledWith(next);
+					assert.strictEqual(returnValue, 'mock-next-return');
 				});
 
 				describe('context.render(templateNames, renderContext', () => {
@@ -266,28 +257,23 @@ describe('lib/renderer', () => {
 						defaultedRenderContext = {
 							mockDefaultedRenderContext: true
 						};
-						jest.spyOn(Object, 'assign').mockReturnValue(defaultedRenderContext);
-						jest.spyOn(instance, 'render').mockResolvedValue('mock-rendered-template');
+						sinon.stub(Object, 'assign').returns(defaultedRenderContext);
+						sinon.stub(instance, 'render').resolves('mock-rendered-template');
 						await context.render('mock-template-names', renderContext);
 					});
 
-					afterEach(() => {
-						Object.assign.mockRestore();
-						instance.render.mockRestore();
-					});
-
 					it('merges the `renderContext` with `context.state`', () => {
-						expect(Object.assign).toHaveBeenCalledTimes(1);
-						expect(Object.assign).toHaveBeenCalledWith({}, context.state, renderContext);
+						assert.calledOnce(Object.assign);
+						assert.calledWith(Object.assign, {}, context.state, renderContext);
 					});
 
 					it('renders the `templateNames` with the defaulted render context', () => {
-						expect(instance.render).toHaveBeenCalledTimes(1);
-						expect(instance.render).toHaveBeenCalledWith('mock-template-names', defaultedRenderContext);
+						assert.calledOnce(instance.render);
+						assert.calledWith(instance.render, 'mock-template-names', defaultedRenderContext);
 					});
 
 					it('sets `context.body` to the rendered template', () => {
-						expect(context.body).toStrictEqual('mock-rendered-template');
+						assert.strictEqual(context.body, 'mock-rendered-template');
 					});
 
 				});
@@ -306,7 +292,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns the rendered template', () => {
-				expect(returnValue).toStrictEqual('mock-rendered-template');
+				assert.strictEqual(returnValue, 'mock-rendered-template');
 			});
 
 			describe('when `renderContext.doctype` is set', () => {
@@ -317,7 +303,7 @@ describe('lib/renderer', () => {
 				});
 
 				it('returns the rendered template with the doctype prepended', () => {
-					expect(returnValue).toStrictEqual('<!MOCKTYPE html>mock-rendered-template');
+					assert.strictEqual(returnValue, '<!MOCKTYPE html>mock-rendered-template');
 				});
 
 			});
@@ -329,7 +315,7 @@ describe('lib/renderer', () => {
 				});
 
 				it('returns the rendered template', () => {
-					expect(returnValue).toStrictEqual('mock-rendered-template');
+					assert.strictEqual(returnValue, 'mock-rendered-template');
 				});
 
 			});
@@ -345,21 +331,17 @@ describe('lib/renderer', () => {
 				renderContext = {mockRenderContext: true};
 				defaultedRenderContext = {mockDefaultedRenderContext: true};
 				instance.renderContext = {mockInstanceRenderContext: true};
-				jest.spyOn(Object, 'assign').mockReturnValue(defaultedRenderContext);
+				sinon.stub(Object, 'assign').returns(defaultedRenderContext);
 				returnValue = instance.applyDefaultRenderContext(renderContext);
 			});
 
-			afterEach(() => {
-				Object.assign.mockRestore();
-			});
-
 			it('defaults the `renderContext`', () => {
-				expect(Object.assign).toHaveBeenCalledTimes(1);
-				expect(Object.assign).toHaveBeenCalledWith({}, instance.renderContext, renderContext);
+				assert.calledOnce(Object.assign);
+				assert.calledWith(Object.assign, {}, instance.renderContext, renderContext);
 			});
 
 			it('returns the defaulted render context', () => {
-				expect(returnValue).toEqual(defaultedRenderContext);
+				assert.deepEqual(returnValue, defaultedRenderContext);
 			});
 
 		});
@@ -368,34 +350,29 @@ describe('lib/renderer', () => {
 			let returnValue;
 
 			beforeEach(() => {
-				jest.spyOn(instance, 'resolveTemplatePaths').mockReturnValue('mock-resolved-template-paths');
-				jest.spyOn(Renderer, 'assertIsFunction').mockReturnValue(undefined);
-				requireFirst.mockReturnValue('mock-template-module');
+				sinon.stub(instance, 'resolveTemplatePaths').returns('mock-resolved-template-paths');
+				sinon.stub(Renderer, 'assertIsFunction').returns(undefined);
+				requireFirst.returns('mock-template-module');
 				returnValue = instance.loadTemplate('mock-template-names');
 			});
 
-			afterEach(() => {
-				instance.resolveTemplatePaths.mockRestore();
-				Renderer.assertIsFunction.mockRestore();
-			});
-
 			it('resolves the template names', () => {
-				expect(instance.resolveTemplatePaths).toHaveBeenCalledTimes(1);
-				expect(instance.resolveTemplatePaths).toHaveBeenCalledWith('mock-template-names');
+				assert.calledOnce(instance.resolveTemplatePaths);
+				assert.calledWith(instance.resolveTemplatePaths, 'mock-template-names');
 			});
 
 			it('requires the resolved template paths using `requireFirst`', () => {
-				expect(requireFirst).toHaveBeenCalledTimes(1);
-				expect(requireFirst).toHaveBeenCalledWith('mock-resolved-template-paths');
+				assert.calledOnce(requireFirst);
+				assert.calledWith(requireFirst, 'mock-resolved-template-paths');
 			});
 
 			it('asserts that the loaded template is a function', () => {
-				expect(Renderer.assertIsFunction).toHaveBeenCalledTimes(1);
-				expect(Renderer.assertIsFunction).toHaveBeenCalledWith('mock-template-module', 'Templates must export a function');
+				assert.calledOnce(Renderer.assertIsFunction);
+				assert.calledWith(Renderer.assertIsFunction, 'mock-template-module', 'Templates must export a function');
 			});
 
 			it('returns the template', () => {
-				expect(returnValue).toEqual('mock-template-module');
+				assert.deepEqual(returnValue, 'mock-template-module');
 			});
 
 		});
@@ -404,10 +381,10 @@ describe('lib/renderer', () => {
 			let returnValue;
 
 			beforeEach(() => {
-				jest.spyOn(instance, 'resolveTemplatePath')
-					.mockReturnValueOnce('mock-resolved-path-1')
-					.mockReturnValueOnce('mock-resolved-path-2')
-					.mockReturnValueOnce('mock-resolved-path-3');
+				sinon.stub(instance, 'resolveTemplatePath');
+				instance.resolveTemplatePath.onCall(0).returns('mock-resolved-path-1');
+				instance.resolveTemplatePath.onCall(1).returns('mock-resolved-path-2');
+				instance.resolveTemplatePath.onCall(2).returns('mock-resolved-path-3');
 				returnValue = instance.resolveTemplatePaths([
 					'mock-template-name-1',
 					'mock-template-name-2',
@@ -415,19 +392,15 @@ describe('lib/renderer', () => {
 				]);
 			});
 
-			afterEach(() => {
-				instance.resolveTemplatePath.mockRestore();
-			});
-
 			it('resolves each template path', () => {
-				expect(instance.resolveTemplatePath).toHaveBeenCalledTimes(3);
-				expect(instance.resolveTemplatePath.mock.calls[0][0]).toStrictEqual('mock-template-name-1');
-				expect(instance.resolveTemplatePath.mock.calls[1][0]).toStrictEqual('mock-template-name-2');
-				expect(instance.resolveTemplatePath.mock.calls[2][0]).toStrictEqual('mock-template-name-3');
+				assert.calledThrice(instance.resolveTemplatePath);
+				assert.strictEqual(instance.resolveTemplatePath.firstCall.args[0], 'mock-template-name-1');
+				assert.strictEqual(instance.resolveTemplatePath.secondCall.args[0], 'mock-template-name-2');
+				assert.strictEqual(instance.resolveTemplatePath.thirdCall.args[0], 'mock-template-name-3');
 			});
 
 			it('returns the resolved template paths', () => {
-				expect(returnValue).toEqual([
+				assert.deepEqual(returnValue, [
 					'mock-resolved-path-1',
 					'mock-resolved-path-2',
 					'mock-resolved-path-3'
@@ -437,18 +410,18 @@ describe('lib/renderer', () => {
 			describe('when `templateNames` is a string', () => {
 
 				beforeEach(() => {
-					instance.resolveTemplatePath.mockReset();
-					instance.resolveTemplatePath.mockReturnValue('mock-resolved-path-1');
+					instance.resolveTemplatePath.reset();
+					instance.resolveTemplatePath.returns('mock-resolved-path-1');
 					returnValue = instance.resolveTemplatePaths('mock-template-name-1');
 				});
 
 				it('resolves the template path', () => {
-					expect(instance.resolveTemplatePath).toHaveBeenCalledTimes(1);
-					expect(instance.resolveTemplatePath.mock.calls[0][0]).toStrictEqual('mock-template-name-1');
+					assert.calledOnce(instance.resolveTemplatePath);
+					assert.strictEqual(instance.resolveTemplatePath.firstCall.args[0], 'mock-template-name-1');
 				});
 
 				it('returns the resolved template path as an array', () => {
-					expect(returnValue).toEqual([
+					assert.deepEqual(returnValue, [
 						'mock-resolved-path-1'
 					]);
 				});
@@ -466,39 +439,35 @@ describe('lib/renderer', () => {
 					namespace: 'mock-namespace',
 					template: 'mock-template'
 				};
-				jest.spyOn(Renderer, 'parseTemplateName').mockReturnValue(parsedTemplate);
+				sinon.stub(Renderer, 'parseTemplateName').returns(parsedTemplate);
 				instance.namespaces = new Map([
 					['mock-namespace', 'mock-namespace-path']
 				]);
 				returnValue = instance.resolveTemplatePath('mock-template-name');
 			});
 
-			afterEach(() => {
-				Renderer.parseTemplateName.mockRestore();
-			});
-
 			it('parses the template name', () => {
-				expect(Renderer.parseTemplateName).toHaveBeenCalledTimes(1);
-				expect(Renderer.parseTemplateName).toHaveBeenCalledWith('mock-template-name');
+				assert.calledOnce(Renderer.parseTemplateName);
+				assert.calledWith(Renderer.parseTemplateName, 'mock-template-name');
 			});
 
 			it('returns the resolved template path', () => {
-				expect(returnValue).toStrictEqual('mock-namespace-path/mock-template');
+				assert.strictEqual(returnValue, 'mock-namespace-path/mock-template');
 			});
 
 			describe('when the template name begins with a slash character', () => {
 
 				beforeEach(() => {
-					Renderer.parseTemplateName.mockReset();
+					Renderer.parseTemplateName.reset();
 					returnValue = instance.resolveTemplatePath('/mock-template');
 				});
 
 				it('does not attempt to parse the template name', () => {
-					expect(Renderer.parseTemplateName).not.toHaveBeenCalled();
+					assert.notCalled(Renderer.parseTemplateName);
 				});
 
 				it('returns the template name as-is', () => {
-					expect(returnValue).toStrictEqual('/mock-template');
+					assert.strictEqual(returnValue, '/mock-template');
 				});
 
 			});
@@ -510,9 +479,9 @@ describe('lib/renderer', () => {
 				});
 
 				it('throws an error', () => {
-					expect(() => {
+					assert.throws(() => {
 						instance.resolveTemplatePath('mock-template-name');
-					}).toThrow(new Error('Renderer namespace "mock-invalid-namespace" is not configured'));
+					}, 'Renderer namespace "mock-invalid-namespace" is not configured');
 				});
 
 			});
@@ -524,26 +493,28 @@ describe('lib/renderer', () => {
 	describe('.defaultOptions', () => {
 
 		it('is an object', () => {
-			expect(Renderer.defaultOptions).not.toBeNull();
-			expect(typeof Renderer.defaultOptions).toStrictEqual('object');
+			assert.isNotNull(Renderer.defaultOptions);
+			assert.strictEqual(typeof Renderer.defaultOptions, 'object');
 		});
 
 		describe('.env', () => {
 
 			it('is set to the `NODE_ENV` environment variable', () => {
-				expect(Renderer.defaultOptions.env).toStrictEqual(process.env.NODE_ENV);
+				assert.strictEqual(Renderer.defaultOptions.env, process.env.NODE_ENV);
 			});
 
 			describe('when `NODE_ENV` is not set', () => {
 
 				beforeEach(() => {
-					jest.resetModules();
+					mockery.deregisterAll();
+					mockery.disable();
+					sinon.restore();
 					delete process.env.NODE_ENV;
 					Renderer = require('../../../lib/renderer');
 				});
 
 				it('is set to "development"', () => {
-					expect(Renderer.defaultOptions.env).toStrictEqual('development');
+					assert.strictEqual(Renderer.defaultOptions.env, 'development');
 				});
 
 			});
@@ -554,7 +525,7 @@ describe('lib/renderer', () => {
 
 			it('is set to the expected file path', () => {
 				const expectedPath = path.resolve(process.cwd(), 'view');
-				expect(Renderer.defaultOptions.path).toStrictEqual(expectedPath);
+				assert.strictEqual(Renderer.defaultOptions.path, expectedPath);
 			});
 
 		});
@@ -562,7 +533,7 @@ describe('lib/renderer', () => {
 		describe('.namespacePaths', () => {
 
 			it('is set to an empty object', () => {
-				expect(Renderer.defaultOptions.namespacePaths).toEqual({});
+				assert.deepEqual(Renderer.defaultOptions.namespacePaths, {});
 			});
 
 		});
@@ -572,7 +543,7 @@ describe('lib/renderer', () => {
 	describe('.html', () => {
 
 		it('is an htm template tag bound to Hyperons', () => {
-			expect(Renderer.html).toStrictEqual(htm.bind.mock.results[0].value);
+			assert.strictEqual(Renderer.html, htm.bind.firstCall.returnValue);
 		});
 
 	});
@@ -580,7 +551,7 @@ describe('lib/renderer', () => {
 	describe('.Partial', () => {
 
 		it('aliases `lib/partial`', () => {
-			expect(Renderer.Partial).toStrictEqual(Partial);
+			assert.strictEqual(Renderer.Partial, Partial);
 		});
 
 	});
@@ -607,21 +578,17 @@ describe('lib/renderer', () => {
 					'mock-namespace': 'mock-namespace-path'
 				}
 			};
-			jest.spyOn(Object, 'assign').mockReturnValue(defaultedOptions);
+			sinon.stub(Object, 'assign').returns(defaultedOptions);
 			returnValue = Renderer.applyDefaultOptions(userOptions);
 		});
 
-		afterEach(() => {
-			Object.assign.mockRestore();
-		});
-
 		it('defaults the `options`', () => {
-			expect(Object.assign).toHaveBeenCalledTimes(1);
-			expect(Object.assign).toHaveBeenCalledWith({}, Renderer.defaultOptions, userOptions);
+			assert.calledOnce(Object.assign);
+			assert.calledWith(Object.assign, {}, Renderer.defaultOptions, userOptions);
 		});
 
 		it('returns the defaulted options with some transformations', () => {
-			expect(returnValue).toEqual(expectedOptions);
+			assert.deepEqual(returnValue, expectedOptions);
 		});
 
 	});
@@ -636,7 +603,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns the expected parsed template name as an object', () => {
-				expect(returnValue).toEqual({
+				assert.deepEqual(returnValue, {
 					namespace: 'mock-namespace',
 					template: 'mock-template'
 				});
@@ -651,7 +618,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns the expected parsed template name as an object', () => {
-				expect(returnValue).toEqual({
+				assert.deepEqual(returnValue, {
 					namespace: '__default',
 					template: 'mock-template'
 				});
@@ -666,7 +633,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns the expected parsed template name as an object', () => {
-				expect(returnValue).toEqual({
+				assert.deepEqual(returnValue, {
 					namespace: '__default',
 					template: 'mock-template'
 				});
@@ -681,7 +648,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns the expected parsed template name as an object', () => {
-				expect(returnValue).toEqual({
+				assert.deepEqual(returnValue, {
 					namespace: 'mock-namespace',
 					template: 'index'
 				});
@@ -696,7 +663,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns the expected parsed template name as an object', () => {
-				expect(returnValue).toEqual({
+				assert.deepEqual(returnValue, {
 					namespace: 'mock-namespace',
 					template: 'mock:template'
 				});
@@ -711,7 +678,7 @@ describe('lib/renderer', () => {
 			});
 
 			it('returns the expected parsed template name as an object', () => {
-				expect(returnValue).toEqual({
+				assert.deepEqual(returnValue, {
 					namespace: '__default',
 					template: 'index'
 				});
@@ -726,10 +693,10 @@ describe('lib/renderer', () => {
 		describe('when `value` looks like an HTML element', () => {
 
 			it('returns `true`', () => {
-				expect(Renderer.isHtmlElement({
+				assert.isTrue(Renderer.isHtmlElement({
 					type: 'mock-tag-name',
 					props: {}
-				})).toStrictEqual(true);
+				}));
 			});
 
 		});
@@ -737,7 +704,7 @@ describe('lib/renderer', () => {
 		describe('when `value` is an array of things that look like HTML elements', () => {
 
 			it('returns `true`', () => {
-				expect(Renderer.isHtmlElement([
+				assert.isTrue(Renderer.isHtmlElement([
 					{
 						type: 'mock-tag-name',
 						props: {}
@@ -746,7 +713,7 @@ describe('lib/renderer', () => {
 						type: 'mock-tag-name',
 						props: {}
 					}
-				])).toStrictEqual(true);
+				]));
 			});
 
 		});
@@ -754,19 +721,19 @@ describe('lib/renderer', () => {
 		describe('when `value` does not look like an HTML element', () => {
 
 			it('returns `false`', () => {
-				expect(Renderer.isHtmlElement('mock')).toStrictEqual(false);
-				expect(Renderer.isHtmlElement({})).toStrictEqual(false);
-				expect(Renderer.isHtmlElement({
+				assert.isFalse(Renderer.isHtmlElement('mock'));
+				assert.isFalse(Renderer.isHtmlElement({}));
+				assert.isFalse(Renderer.isHtmlElement({
 					type: undefined,
 					props: undefined
-				})).toStrictEqual(false);
-				expect(Renderer.isHtmlElement([
+				}));
+				assert.isFalse(Renderer.isHtmlElement([
 					{
 						type: 'mock-tag-name',
 						props: {}
 					},
 					'mock'
-				])).toStrictEqual(false);
+				]));
 			});
 
 		});
@@ -776,23 +743,19 @@ describe('lib/renderer', () => {
 	describe('.assertIsHtmlElement(value, errorMessage)', () => {
 
 		beforeEach(() => {
-			jest.spyOn(Renderer, 'isHtmlElement');
-		});
-
-		afterEach(() => {
-			Renderer.isHtmlElement.mockRestore();
+			sinon.stub(Renderer, 'isHtmlElement');
 		});
 
 		describe('when `.isHtmlElement(value)` returns `true`', () => {
 
 			beforeEach(() => {
-				Renderer.isHtmlElement.mockReturnValue(true);
+				Renderer.isHtmlElement.returns(true);
 			});
 
 			it('does not throw', () => {
-				expect(() => {
+				assert.doesNotThrow(() => {
 					Renderer.assertIsHtmlElement('mock-value', 'mock-message');
-				}).not.toThrow();
+				});
 			});
 
 		});
@@ -800,13 +763,13 @@ describe('lib/renderer', () => {
 		describe('when `.isHtmlElement(value)` returns `false`', () => {
 
 			beforeEach(() => {
-				Renderer.isHtmlElement.mockReturnValue(false);
+				Renderer.isHtmlElement.returns(false);
 			});
 
 			it('throws an error with `errorMessage` as the message', () => {
-				expect(() => {
+				assert.throws(() => {
 					Renderer.assertIsHtmlElement('mock-value', 'mock-message');
-				}).toThrow(new TypeError('mock-message'));
+				}, 'mock-message');
 			});
 
 		});
@@ -818,9 +781,9 @@ describe('lib/renderer', () => {
 		describe('when `value` is a function', () => {
 
 			it('does not throw', () => {
-				expect(() => {
+				assert.doesNotThrow(() => {
 					Renderer.assertIsFunction(() => 'mock-return', 'mock-message');
-				}).not.toThrow();
+				});
 			});
 
 		});
@@ -828,9 +791,9 @@ describe('lib/renderer', () => {
 		describe('when `.isHtmlElement(value)` returns `false`', () => {
 
 			it('throws an error with `errorMessage` as the message', () => {
-				expect(() => {
+				assert.throws(() => {
 					Renderer.assertIsFunction('mock-value', 'mock-message');
-				}).toThrow(new TypeError('mock-message'));
+				}, 'mock-message');
 			});
 
 		});
